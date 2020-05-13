@@ -111,7 +111,6 @@ The pancake stack starts out as empty.
 | Take off the butter! | Decrement only the top stack value. |
 | Eat all of the pancakes! | Terminate the program. |
 
-
 **Implementation Notes:**
 - `How about a hotcake?` pushes 0 when there is no input left.
 - `[label]` overrides an existing label with the same name.
