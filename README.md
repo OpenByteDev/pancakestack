@@ -83,7 +83,14 @@ The pancake stack starts out as empty.
 | Put butter on the pancakes! | Increment only the top stack value. |
 | Take off the syrup! | Decrement all stack values. |
 | Take off the butter! | Decrement only the top stack value. |
-| Eat all of the pancakes! | Terminate the program.  |
+| Eat all of the pancakes! | Terminate the program. |
+
+**Implementation Notes:**
+- `How about a hotcake?` pushes 0 when there is no input left.
+- `[label]` overrides an existing label with the same name.
+- Over- and underflowing `u32` will lead to an error (not a `panic`).
+
+
 
 ## Language Examples
 
