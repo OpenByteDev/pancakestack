@@ -35,12 +35,6 @@ let output = str::from_utf8(&output_buf).unwrap();
 
 This examples shows how to parse and run a `.pancake` script using `stdin()` as input and `stdout()` as output.
 ```rust
-let file = File::open("example.pancake")?;
-let input = b"some input";
-let mut output_buf = Vec::new();
-pancakestack::run_program_from_read(file, &input[..], &mut output_buf).unwrap();
-let output = str::from_utf8(&output_buf).unwrap();
-
 let mut file = File::open("example.pancake").unwrap();
 let mut program_str = String::new();
 file.read_to_string(&mut program_str).unwrap();
