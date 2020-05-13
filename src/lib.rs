@@ -10,7 +10,7 @@
 //!
 //! **Basic Usage**
 //!
-//! A program can be parsed with [`pancakestack::parse_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.parse_program_str.html) and run it with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program.html).
+//! A program can be parsed with [`pancakestack::parse_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.parse_program_str.html) and run with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program.html).
 //!
 //! ```rust
 //! # use std::fs::File;
@@ -29,7 +29,7 @@
 //! # }
 //! ```
 //!
-//! Alternatively you can run a program from a [str](https://doc.rust-lang.org/std/primitive.str.html) or a [Read](https://doc.rust-lang.org/std/io/trait.Read.html) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html) or [`pancakestack::run_program_from_read`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html) respectively.
+//! Alternatively you can run a program from a [str](https://doc.rust-lang.org/std/primitive.str.html) or a [Read](https://doc.rust-lang.org/std/io/trait.Read.html) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html) and  [`pancakestack::run_program_from_read`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html) respectively.
 //!
 //! ```rust
 //! # use std::fs::File;
@@ -57,9 +57,10 @@
 //! # }
 //! ```
 //!
-//! All `pancakestack::run_*`methods accept and [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) for the input of the script and a [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) as the output.
+//! All `pancakestack::run_*`methods accept a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) as the input of the script and a [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) as the output.
 //!
-//! The examples until now used [`stdin()`](https://doc.rust-lang.org/std/io/fn.stdin.html) and [`stdout()`](https://doc.rust-lang.org/std/io/fn.stdout.html), but it is possible to use anything implementing [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) and [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) respectively. The folowing example shows the use of strings as input and output:
+//! The examples until now used [`stdin()`](https://doc.rust-lang.org/std/io/fn.stdin.html) and [`stdout()`](https://doc.rust-lang.org/std/io/fn.stdout.html), but it is possible to use anything implementing [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) and [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) respectively.
+//! The following example shows the use of strings as input and output:
 //!
 //! ```rust
 //! # use std::fs::File;
@@ -77,7 +78,7 @@
 //!
 //! A program can be parsed from a [`str`](https://doc.rust-lang.org/std/str/) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html). A single line (=command) can be parsed with [`BorrowedCommand::from_line`](https://docs.rs/pancakestack/*/pancakestack/enum.BorrowedCommand.html#method.from_line).
 //!
-//! Complete programs can pe constructed by creating a [`Vec`](https://doc.rust-lang.org/std/vec/) of [`BorrowedCommand`](https://docs.rs/pancakestack/*/pancakestack/enum.BorrowedCommand.html)s and run with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program.html).
+//! Programs can be constructed by creating a [`Vec`](https://doc.rust-lang.org/std/vec/) of [`BorrowedCommand`](https://docs.rs/pancakestack/*/pancakestack/enum.BorrowedCommand.html)s and ran with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program.html).
 //!
 //! ```rust
 //! use pancakestack::BorrowedCommand;
