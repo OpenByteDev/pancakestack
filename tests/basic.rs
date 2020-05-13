@@ -1,8 +1,8 @@
+use pancakestack::*;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::str;
-use pancakestack::*;
 
 #[test]
 fn simplest() -> Result<(), Box<dyn Error>> {
@@ -19,11 +19,14 @@ fn simplest() -> Result<(), Box<dyn Error>> {
 fn parse_program() -> Result<(), Box<dyn Error>> {
     let program_str = "Put this test pancake on top!\nShow me a pancake!";
     let program_parsed = pancakestack::parse_program_str(program_str);
-    
-    assert_eq!(program_parsed, vec![
-        BorrowedCommand::PutThisPancakeOnTop("test"),
-        BorrowedCommand::ShowMeAPancake
-    ]);
+
+    assert_eq!(
+        program_parsed,
+        vec![
+            BorrowedCommand::PutThisPancakeOnTop("test"),
+            BorrowedCommand::ShowMeAPancake
+        ]
+    );
     Ok(())
 }
 
@@ -56,7 +59,6 @@ fn countdown_bin() -> Result<(), Box<dyn Error>> {
     assert_eq!(output, expected);
     Ok(())
 }
-
 
 #[test]
 fn div10() -> Result<(), Box<dyn Error>> {

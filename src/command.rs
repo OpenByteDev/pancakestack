@@ -32,6 +32,9 @@ lazy_static! {
         Regex::new(r"^Eat all of the pancakes!$").unwrap();
 }
 
+/// An enum representing a pancakestack command.
+/// Labels and pancake adjectives are stored in [`str`](https://doc.rust-lang.org/std/str/)s .
+/// See [`OwnedCommand`](./enum.OwnedCommand.html) for a version that uses [`String`](https://doc.rust-lang.org/std/string/struct.String.html)s.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BorrowedCommand<'a> {
     PutThisPancakeOnTop(&'a str),
@@ -54,6 +57,8 @@ pub enum BorrowedCommand<'a> {
 }
 
 impl<'a> BorrowedCommand<'a> {
+    /// Parses the given line as a pancake stack command.
+    /// The command will reference the strings contents.
     pub fn from_line(line: &'a str) -> Result<Self, ParseCommandError<'a>> {
         if let Some(captures) = PUT_THIS_PANCAKE_ON_TOP_REGEX.captures_iter(line).next() {
             return Ok(BorrowedCommand::PutThisPancakeOnTop(
@@ -120,67 +125,7 @@ impl<'a> BorrowedCommand<'a> {
         }
         Err(ParseCommandError::new(line))
     }
-}
-/*impl<'a> FromStr for BorrowedCommand<'a> {
-    type Err = ParseCommandError;
-
-    fn from_str(line: &'a str) -> Result<Self, Self::Err> {
-        if let Some(captures) = PUT_THIS_PANCAKE_ON_TOP_REGEX.captures_iter(line).next() {
-            return Ok(BorrowedCommand::PutThisPancakeOnTop(captures.get(1).unwrap().as_str()));
-        }
-        if EAT_THE_PANCAKE_ON_TOP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::EatThePancakeOnTop);
-        }
-        if PUT_THE_TOP_PANCAKES_TOGETHER_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutTheTopPancakesTogether);
-        }
-        if GIVE_ME_A_PANCAKE_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::GiveMeAPancake);
-        }
-        if HOW_ABOUT_A_HOTCAKE_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::HowAboutAHotcake);
-        }
-        if SHOW_ME_A_PANCAKE_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::ShowMeAPancake);
-        }
-        if TAKE_FROM_THE_TOP_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::TakeFromTheTopPancakes);
-        }
-        if FLIP_THE_PANCAKES_ON_TOP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::FlipThePancakesOnTop);
-        }
-        if PUT_ANOTHER_PANCAKE_ON_TOP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutAnotherPancakeOnTop);
-        }
-        if let Some(captures) = LABEL_REGEX.captures_iter(line).next() {
-            return Ok(BorrowedCommand::Label(captures.get(1).unwrap().as_str()));
-        }
-        if let Some(captures) = IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX.captures_iter(line).next() {
-            return Ok(BorrowedCommand::IfThePancakeIsntTastyGoOverTo(captures.get(1).unwrap().as_str()));
-        }
-        if let Some(captures) = IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX.captures_iter(line).next() {
-            return Ok(BorrowedCommand::IfThePancakeIsTastyGoOverTo(captures.get(1).unwrap().as_str()));
-        }
-        if PUT_SYRUP_ON_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutSyrupOnThePancakes)
-        }
-        if PUT_BUTTER_ON_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutButterOnThePancakes)
-        }
-        if TAKE_OFF_THE_SYRUP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::TakeOffTheSyrup)
-        }
-        if TAKE_OFF_THE_BUTTER_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::TakeOffTheButter)
-        }
-        if EAT_ALL_OF_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::EatAllOfThePancakes)
-        }
-        Err(ParseCommandError::new())
-    }
-}*/
-
-impl BorrowedCommand<'_> {
+    /// Converts this command into an [`OwnedCommand`](./enum.OwnedCommand.html) heap allocating the referenced [`str`](https://doc.rust-lang.org/std/str/)s.
     pub fn to_owned(self) -> OwnedCommand {
         match self {
             BorrowedCommand::PutThisPancakeOnTop(adj) => {
@@ -210,6 +155,9 @@ impl BorrowedCommand<'_> {
     }
 }
 
+/// An enum representing a pancakestack command.
+/// Labels and pancake adjectives are stored in [`String`](https://doc.rust-lang.org/std/string/struct.String.html)s .
+/// See [`BorrowedCommand`](./enum.BorrowedCommand.html) for a version that uses [`str`](https://doc.rust-lang.org/std/str/)s.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum OwnedCommand {
     PutThisPancakeOnTop(String),
@@ -232,10 +180,13 @@ pub enum OwnedCommand {
 }
 
 impl OwnedCommand {
+    /// Parses the given line as a pancake stack command.
+    /// The command will clone parts of the string (labels and adjectives).
     pub fn from_line<'a>(line: &'a str) -> Result<Self, ParseCommandError<'a>> {
         BorrowedCommand::from_line(line).map(|e| e.to_owned())
     }
 
+    /// Converts this command into an [`BorrowedCommand`](./enum.BorrowedCommand.html) referencing the strings in the original command.
     pub fn borrow<'a>(&'a self) -> BorrowedCommand<'a> {
         match self {
             OwnedCommand::PutThisPancakeOnTop(adj) => BorrowedCommand::PutThisPancakeOnTop(&adj),
@@ -262,85 +213,6 @@ impl OwnedCommand {
         }
     }
 }
-
-/*impl FromStr for OwnedCommand {
-    type Err = ParseCommandError;
-
-    fn from_str(line: &str) -> Result<Self, Self::Err> {
-        if let Some(captures) = PUT_THIS_PANCAKE_ON_TOP_REGEX.captures_iter(line).next() {
-            return Ok(OwnedCommand::PutThisPancakeOnTop(captures[1].to_string()));
-        }
-        if EAT_THE_PANCAKE_ON_TOP_REGEX.is_match(line) {
-            return Ok(OwnedCommand::EatThePancakeOnTop);
-        }
-        if PUT_THE_TOP_PANCAKES_TOGETHER_REGEX.is_match(line) {
-            return Ok(OwnedCommand::PutTheTopPancakesTogether);
-        }
-        if GIVE_ME_A_PANCAKE_REGEX.is_match(line) {
-            return Ok(OwnedCommand::GiveMeAPancake);
-        }
-        if HOW_ABOUT_A_HOTCAKE_REGEX.is_match(line) {
-            return Ok(OwnedCommand::HowAboutAHotcake);
-        }
-        if SHOW_ME_A_PANCAKE_REGEX.is_match(line) {
-            return Ok(OwnedCommand::ShowMeAPancake);
-        }
-        if TAKE_FROM_THE_TOP_PANCAKES_REGEX.is_match(line) {
-            return Ok(OwnedCommand::TakeFromTheTopPancakes);
-        }
-        if FLIP_THE_PANCAKES_ON_TOP_REGEX.is_match(line) {
-            return Ok(OwnedCommand::FlipThePancakesOnTop);
-        }
-        if PUT_ANOTHER_PANCAKE_ON_TOP_REGEX.is_match(line) {
-            return Ok(OwnedCommand::PutAnotherPancakeOnTop);
-        }
-        if let Some(captures) = LABEL_REGEX.captures_iter(line).next() {
-            return Ok(OwnedCommand::Label(captures[1].to_string()));
-        }
-        if let Some(captures) = IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX.captures_iter(line).next() {
-            return Ok(OwnedCommand::IfThePancakeIsntTastyGoOverTo(captures[1].to_string()));
-        }
-        if let Some(captures) = IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX.captures_iter(line).next() {
-            return Ok(OwnedCommand::IfThePancakeIsTastyGoOverTo(captures[1].to_string()));
-        }
-        if PUT_SYRUP_ON_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(OwnedCommand::PutSyrupOnThePancakes)
-        }
-        if PUT_BUTTER_ON_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(OwnedCommand::PutButterOnThePancakes)
-        }
-        if TAKE_OFF_THE_SYRUP_REGEX.is_match(line) {
-            return Ok(OwnedCommand::TakeOffTheSyrup)
-        }
-        if TAKE_OFF_THE_BUTTER_REGEX.is_match(line) {
-            return Ok(OwnedCommand::TakeOffTheButter)
-        }
-        if EAT_ALL_OF_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(OwnedCommand::EatAllOfThePancakes)
-        }
-        Err(ParseCommandError::new(line))
-    }
-}*/
-
-/*
-#[derive(Debug)]
-pub struct ParseCommandError {
-}
-impl ParseCommandError {
-    pub fn new() -> Self {
-        ParseCommandError {}
-    }
-}
-impl Display for ParseCommandError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Failed to parse command")
-    }
-}
-impl std::error::Error for ParseCommandError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}*/
 
 #[derive(Debug)]
 pub struct ParseCommandError<'line> {

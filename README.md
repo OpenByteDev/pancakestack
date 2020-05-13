@@ -10,7 +10,7 @@ This is a Rust implementation of the [Pancake Stack](https://esolangs.org/wiki/P
 
 ## Usage
 
-To use pancakestack, first add this to your Cargo.toml:
+To use pancakestack, first include this in your Cargo.toml:
 ```toml
 [dependencies]
 "pancakestack" = "0.1.0"
@@ -18,53 +18,79 @@ To use pancakestack, first add this to your Cargo.toml:
 
 ## Crate Examples
 
-This examples shows how to run a `.pancake` file using `stdin()` as input and `stdout()` as output.
-```rust
-let file = File::open("example.pancake").unwrap();
-pancakestack::run_program_from_read(file, std::io:stdin(), std::io:stdout()).unwrap();
-```
+**Basic Usage**
 
-This examples shows how to run a `.pancake` file with strings as input and output.
-```rust
-let file = File::open("example.pancake").unwrap();
-let input = b"some input";
-let mut output_buf = Vec::new();
-pancakestack::run_program_from_read(file, &input[..], &mut output_buf).unwrap();
-let output = str::from_utf8(&output_buf).unwrap();
-```
+A program can be parsed with [`pancakestack::parse_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.parse_program_str.html) and run it with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program.html).
 
-This examples shows how to parse and run a `.pancake` script using `stdin()` as input and `stdout()` as output.
 ```rust
-let file = File::open("example.pancake")?;
-let input = b"some input";
-let mut output_buf = Vec::new();
-pancakestack::run_program_from_read(file, &input[..], &mut output_buf).unwrap();
-let output = str::from_utf8(&output_buf).unwrap();
-
+// load program from file
 let mut file = File::open("example.pancake").unwrap();
 let mut program_str = String::new();
 file.read_to_string(&mut program_str).unwrap();
 
+// parse the program
 let program = pancakestack::parse_program_str(&program_str);
-pancakestack::run_program(&program, std::io:stdin(), std::io:stdout()).unwrap();
 
+// run the program
+pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
 ```
 
-This examples shows how to construct a script from commands and running it.
+Alternatively you can run a program from a [str](https://doc.rust-lang.org/std/primitive.str.html) or a [Read](https://doc.rust-lang.org/std/io/trait.Read.html) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html) or [`pancakestack::run_program_from_read`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html) respectively.
+
 ```rust
-use pancakestack::command::*;
+// load script file
+let mut file = File::open("example.pancake").unwrap();
+
+// write program into string
+let mut program = String::new();
+file.read_to_string(&mut program).unwrap();
+
+pancakestack::run_program_str(&program, std::io::stdin(), std::io::stdout()).unwrap();
+```
+
+```rust
+// open script file
+let mut file = File::open("example.pancake").unwrap();
+
+// run the script directly from the file
+pancakestack::run_program_from_read(file, std::io::stdin(), std::io::stdout()).unwrap();
+```
+
+All `pancakestack::run_*`methods accept and [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) for the input of the script and a [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) as the output.
+
+The examples until now used [`stdin()`](https://doc.rust-lang.org/std/io/fn.stdin.html) and [`stdout()`](https://doc.rust-lang.org/std/io/fn.stdout.html), but it is possible to use anything implementing [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) and [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html) respectively. The folowing example shows the use of strings as input and output:
+
+```rust
+let file = File::open("example.pancake").unwrap();
+let input = b"some input";
+let mut output_buf = Vec::new();
+pancakestack::run_program_from_read(file, &input[..], &mut output_buf).unwrap();
+let output = std::str::from_utf8(&output_buf).unwrap();
+```
+
+
+**Construct programs**
+
+A program can be parsed from a [`str`](https://doc.rust-lang.org/std/str/) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program_str.html). A single line (=command) can be parsed with [`BorrowedCommand::from_line`](https://docs.rs/pancakestack/*/pancakestack/enum.BorrowedCommand.html#method.from_line).
+
+Complete programs can pe constructed by creating a [`Vec`](https://doc.rust-lang.org/std/vec/) of [`BorrowedCommand`](https://docs.rs/pancakestack/*/pancakestack/enum.BorrowedCommand.html)s and run with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/fn.run_program.html).
+
+```rust
+use pancakestack::BorrowedCommand;
 
 let program = vec![
     BorrowedCommand::PutThisPancakeOnTop("test"),
     BorrowedCommand::ShowMeAPancake,
     BorrowedCommand::EatAllOfThePancakes
 ];
-pancakestack::run_program(&program, std::io:stdin(), std::io:stdout()).unwrap();
+pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
 ```
+
 
 ## Language Syntax
 
 The pancake stack starts out as empty.
+
 | Code | Meaning |
 | ---- | ------- |
 | Put this X pancake on top! | Push the word length of X on top of the stack, i.e. "wonderful" would push 9. |
@@ -76,8 +102,8 @@ The pancake stack starts out as empty.
 | Take from the top pancakes! | Pop off the top two values, subtract the second one from the first one, and push the result. |
 | Flip the pancakes on top! | Pop off the top two values, swap them, and push them back. |
 | Put another pancake on top! | Pop off the top value and push it twice. |
-| [label] | Defines a label to go back to (Can also define a comment, if needed). When you go back to the label, it goes to the line number (1 indexed) of the top value of the stack when the label was defined. |
-| If the pancake isn't tasty, go over to "label". | Go to label [label] if the top value is 0. |
+| \[label\] | Defines a label to go back to (Can also define a comment, if needed). When you go back to the label, it goes to the line number (1 indexed) of the top value of the stack when the label was defined. |
+| If the pancake isn't tasty, go over to "label". | Go to label \[label\] if the top value is 0. |
 | If the pancake is tasty, go over to "label". | Same as above, except go if the top value is not 0. |
 | Put syrup on the pancakes! | Increment all stack values. |
 | Put butter on the pancakes! | Increment only the top stack value. |
@@ -85,12 +111,11 @@ The pancake stack starts out as empty.
 | Take off the butter! | Decrement only the top stack value. |
 | Eat all of the pancakes! | Terminate the program. |
 
+
 **Implementation Notes:**
 - `How about a hotcake?` pushes 0 when there is no input left.
 - `[label]` overrides an existing label with the same name.
 - Over- and underflowing `u32` will lead to an error (not a `panic`).
-
-
 
 ## Language Examples
 
@@ -191,6 +216,8 @@ Show me a pancake!
 If the pancake is tasty, go over to "CAT".
 Eat all of the pancakes!
 ```
+
+Other examples can be found in the [`examples\`](.\examples\) directory.
 
 ## License
 Licensed under MIT license ([LICENSE](./LICENSE) or http://opensource.org/licenses/MIT)

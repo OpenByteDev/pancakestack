@@ -5,6 +5,19 @@ use std::io::{self, prelude::*, BufReader, Read, Write};
 use std::*;
 use unicode_segmentation::UnicodeSegmentation;
 
+/// Parses and run the commands read from the given Read using the provided input and output.
+/// Each command has to be on its own line.
+/// ```rust
+/// # use std::fs::File;
+/// # use std::io::Read;
+/// # fn run() {
+/// let file = File::open("example.pancake").unwrap();
+/// let input = b"some input";
+/// let mut output_buf = Vec::new();
+/// pancakestack::run_program_from_read(file, &input[..], &mut output_buf).unwrap();
+/// let output = std::str::from_utf8(&output_buf).unwrap();
+/// # }
+/// ```
 pub fn run_program_from_read<P, I, O>(program: P, input: I, mut output: O) -> Result<(), Error>
 where
     P: Read,
@@ -64,7 +77,7 @@ where
         };
 
         // println!("{:?} {:?}", stack, command);
-        
+
         match command {
             OwnedCommand::PutThisPancakeOnTop(adjective) => {
                 stack.push(adjective.graphemes(true).count() as u32);
@@ -94,12 +107,7 @@ where
             }
             OwnedCommand::HowAboutAHotcake => {
                 let buf = input.fill_buf()?;
-                let number_input = 
-                    if buf.len() == 0 {
-                        0
-                    } else {
-                        buf[0]
-                    };
+                let number_input = if buf.len() == 0 { 0 } else { buf[0] };
                 input.consume(1);
                 stack.push(number_input as u32);
             }
@@ -140,7 +148,7 @@ where
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last().unwrap();
-                labels.insert(label.clone(), (*top-1) as usize);
+                labels.insert(label.clone(), (*top - 1) as usize);
             }
             OwnedCommand::IfThePancakeIsntTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
@@ -197,6 +205,25 @@ where
     }
     Ok(())
 }
+
+/// Parses and run the commands contained in the given string using the provided input and output.
+/// Each command has to be on its own line.
+/// ```rust
+/// # use std::fs::File;
+/// # use std::io::Read;
+/// # fn run() {
+/// // load program from file
+/// let mut file = File::open("example.pancake").unwrap();
+/// let mut program_str = String::new();
+/// file.read_to_string(&mut program_str).unwrap();
+///
+/// // parse the program
+/// let program = pancakestack::parse_program_str(&program_str);
+///
+/// // run the program
+/// pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
+/// # }
+/// ```
 pub fn run_program_str<I, O>(program: &str, input: I, output: O) -> Result<(), Error>
 where
     I: Read,
@@ -205,6 +232,24 @@ where
     let parsed = parse_program_str(program);
     run_program(&parsed, input, output)
 }
+
+/// Runs the given commands using the provided input and output.
+/// ```rust
+/// # use std::fs::File;
+/// # use std::io::Read;
+/// # fn run() {
+/// // load program from file
+/// let mut file = File::open("example.pancake").unwrap();
+/// let mut program_str = String::new();
+/// file.read_to_string(&mut program_str).unwrap();
+///
+/// // parse the program
+/// let program = pancakestack::parse_program_str(&program_str);
+///
+/// // run the program
+/// pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
+/// # }
+/// ```
 pub fn run_program<I, O>(
     program: &Vec<BorrowedCommand<'_>>,
     input: I,
@@ -227,7 +272,7 @@ where
         };
         current_statement += 1;
 
-        // println!("{:?}", command);
+        // println!("{:?} {:?}", stack, command);
 
         match command {
             BorrowedCommand::PutThisPancakeOnTop(adjective) => {
@@ -258,12 +303,7 @@ where
             }
             BorrowedCommand::HowAboutAHotcake => {
                 let buf = input.fill_buf()?;
-                let number_input = 
-                    if buf.len() == 0 {
-                        0
-                    } else {
-                        buf[0]
-                    };
+                let number_input = if buf.len() == 0 { 0 } else { buf[0] };
                 input.consume(1);
                 stack.push(number_input as u32);
             }
@@ -304,7 +344,7 @@ where
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last().unwrap();
-                labels.insert(label.clone(), (*top-1) as usize);
+                labels.insert(label.clone(), (*top - 1) as usize);
             }
             BorrowedCommand::IfThePancakeIsntTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
@@ -362,6 +402,22 @@ where
     Ok(())
 }
 
+/// Parses the given str into an vec of commands.
+/// Each command has to be on its own line.
+/// This method does not allocate any strings.
+/// ```rust
+/// # use std::fs::File;
+/// # use std::io::Read;
+/// # fn run() {
+/// // load program from file
+/// let mut file = File::open("example.pancake").unwrap();
+/// let mut program_str = String::new();
+/// file.read_to_string(&mut program_str).unwrap();
+///
+/// // parse the program
+/// let program = pancakestack::parse_program_str(&program_str);
+/// # }
+/// ```
 pub fn parse_program_str<'a>(program: &'a str) -> Vec<BorrowedCommand<'a>> {
     program
         .lines()
@@ -369,14 +425,22 @@ pub fn parse_program_str<'a>(program: &'a str) -> Vec<BorrowedCommand<'a>> {
         .collect()
 }
 
+/// An enum representing the possible errors when executing a pancakestack program.
 #[derive(Debug)]
 pub enum Error {
+    /// You were greedy and wanted more pancakes than were available.
     OutOfPancakes,
+    /// You gave me a pancake that was not a valid number.
     InvalidPancake(String),
+    /// The pancake you tried to display was shy and hid outside of your visible spectrum (no a valid char).
     CanNotShowPancake(u32),
+    /// You tried to go somewhere undefined.
     UndefinedLabel(String),
+    /// You tried to produce an invalid pancake by underflowing u32.
     PancakeUnderflow,
+    /// You tried to produce an invalid pancake by overflowing u32.
     PancakeOverflow,
+    /// An Io Error occured while reading from the provided [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) or writing from the provided [`Write`](https://doc.rust-lang.org/std/io/trait.Write.html).
     Io(io::Error),
 }
 impl Display for Error {
