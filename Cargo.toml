@@ -8,3 +8,10 @@ edition = "2018"
 "regex" = "*"
 "lazy_static" = "*"
 "unicode-segmentation" = "*"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "bench"
+harness = false
