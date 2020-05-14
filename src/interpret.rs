@@ -1,4 +1,4 @@
-use crate::command::*;
+use crate::parse::*;
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::io::{self, prelude::*, BufReader, Read, Write};
@@ -400,29 +400,6 @@ where
         }
     }
     Ok(())
-}
-
-/// Parses the given str into an vec of commands.
-/// Each command has to be on its own line.
-/// This method does not allocate any strings.
-/// ```rust
-/// # use std::fs::File;
-/// # use std::io::Read;
-/// # fn run() {
-/// // load program from file
-/// let mut file = File::open("example.pancake").unwrap();
-/// let mut program_str = String::new();
-/// file.read_to_string(&mut program_str).unwrap();
-///
-/// // parse the program
-/// let program = pancakestack::parse_program_str(&program_str);
-/// # }
-/// ```
-pub fn parse_program_str<'a>(program: &'a str) -> Vec<BorrowedCommand<'a>> {
-    program
-        .lines()
-        .filter_map(|line| BorrowedCommand::from_line(line).ok())
-        .collect()
 }
 
 /// An enum representing the possible errors when executing a pancakestack program.
