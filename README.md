@@ -73,7 +73,7 @@ let output = std::str::from_utf8(&output_buf).unwrap();
 
 **Construct programs**
 
-A program can be parsed from a [`str`](https://doc.rust-lang.org/std/str/) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program_str.html). A single line (=command) can be parsed with [`BorrowedCommand::from_line`](https://docs.rs/pancakestack/*/pancakestack/parse/enum.BorrowedCommand.html#method.from_line).
+A program can be parsed from a [`str`](https://doc.rust-lang.org/std/str/) with [`pancakestack::parse_program_str`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.parse_program_str.html). A single line (=command) can be parsed with [`BorrowedCommand::from_line`](https://docs.rs/pancakestack/*/pancakestack/parse/enum.BorrowedCommand.html#method.from_line).
 
 Parsed programs are slices of [`BorrowedCommand`](https://docs.rs/pancakestack/*/pancakestack/parse/enum.BorrowedCommand.html)s and can be run with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program.html).
 
