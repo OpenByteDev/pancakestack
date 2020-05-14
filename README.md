@@ -8,6 +8,8 @@ This is a Rust implementation of the [Pancake Stack](https://esolangs.org/wiki/P
 
 > Pancake Stack is a stack-based esoteric programming language created by User [JWinslow23](https://esolangs.org/wiki/User:JWinslow23) in [2013](https://en.wikipedia.org/wiki/2013), in which programs require you to manipulate a stack of [pancakes](https://i.ytimg.com/vi/FLd00Bx4tOk/maxresdefault.jpg).
 
+![](https://i.ytimg.com/vi/FLd00Bx4tOk/maxresdefault.jpg)
+
 ## Usage
 
 To use pancakestack, first include this in your Cargo.toml:
