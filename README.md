@@ -218,7 +218,7 @@ If the pancake is tasty, go over to "CAT".
 Eat all of the pancakes!
 ```
 
-Other examples can be found in the [examples](.\examples) directory.
+Other examples can be found in the [examples](https://github.com/OpenByteDev/pancakestack/tree/master/examples) directory.
 
 ## License
 Licensed under MIT license ([LICENSE](./LICENSE) or http://opensource.org/licenses/MIT)
