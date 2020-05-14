@@ -1,8 +1,8 @@
-use crate::parse::*;
+use crate::parse::{parse_program_str, BorrowedCommand, OwnedCommand};
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::io::{self, prelude::*, BufReader, Read, Write};
-use std::*;
+use std::{char, eprintln, str, u32, usize, write};
 use unicode_segmentation::UnicodeSegmentation;
 
 /// Parses and run the commands read from the given Read using the provided input and output.
@@ -18,6 +18,9 @@ use unicode_segmentation::UnicodeSegmentation;
 /// let output = std::str::from_utf8(&output_buf).unwrap();
 /// # }
 /// ```
+///
+/// # Errors
+/// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
 pub fn run_program_from_read<P, I, O>(program: P, input: I, mut output: O) -> Result<(), Error>
 where
     P: Read,
@@ -35,49 +38,46 @@ where
     let mut program_line = String::new();
     let mut in_line = String::new();
     loop {
-        let command = match current_statement {
-            Some(ref mut index) => match executed.get(*index) {
-                Some(c) => {
-                    *index += 1;
-                    c
-                }
-                None => {
-                    current_statement = None;
-                    continue;
-                }
-            },
-            None => {
-                program_line.clear();
-                let length = program.read_line(&mut program_line)?;
-                if length == 0 {
-                    return Ok(());
-                }
-                trim_newline(&mut program_line);
-
-                fn trim_newline(s: &mut String) {
-                    if s.ends_with('\n') {
-                        s.pop();
-                        if s.ends_with('\r') {
-                            s.pop();
-                        }
-                    }
-                }
-
-                let c = OwnedCommand::from_line(&program_line);
-                if c.is_err() {
-                    if !program_line.trim().is_empty() {
-                        eprintln!("invalid command: \"{}\"", program_line);
-                    }
-                    continue;
-                }
-                let c = c.unwrap().to_owned();
-                executed.push(c.clone());
-                executed.last().unwrap()
+        let command = if let Some(ref mut index) = current_statement {
+            if let Some(c) = executed.get(*index) {
+                *index += 1;
+                c
+            } else {
+                current_statement = None;
+                continue;
             }
+        } else {
+            program_line.clear();
+            let length = program.read_line(&mut program_line)?;
+            if length == 0 {
+                return Ok(());
+            }
+            trim_newline(&mut program_line);
+
+            fn trim_newline(s: &mut String) {
+                if s.ends_with('\n') {
+                    s.pop();
+                    if s.ends_with('\r') {
+                        s.pop();
+                    }
+                }
+            }
+
+            let c = OwnedCommand::from_line(&program_line);
+            if c.is_err() {
+                if !program_line.trim().is_empty() {
+                    eprintln!("invalid command: \"{}\"", program_line);
+                }
+                continue;
+            }
+            let c = c.unwrap().to_owned();
+            executed.push(c.clone());
+            executed.last().unwrap()
         };
 
         // println!("{:?} {:?}", stack, command);
 
+        // TODO: Deduplicate this code
         match command {
             OwnedCommand::PutThisPancakeOnTop(adjective) => {
                 stack.push(adjective.graphemes(true).count() as u32);
@@ -109,7 +109,7 @@ where
                 let buf = input.fill_buf()?;
                 let number_input = *buf.get(0).unwrap_or(&0);
                 input.consume(1);
-                stack.push(number_input as u32);
+                stack.push(u32::from(number_input));
             }
             OwnedCommand::ShowMeAPancake => {
                 if stack.is_empty() {
@@ -175,7 +175,7 @@ where
                 }
             }
             OwnedCommand::PutSyrupOnThePancakes => {
-                for value in stack.iter_mut() {
+                for value in &mut stack {
                     *value = value.checked_add(1).ok_or(Error::PancakeOverflow)?;
                 }
             }
@@ -187,7 +187,7 @@ where
                 *top = top.checked_add(1).ok_or(Error::PancakeOverflow)?;
             }
             OwnedCommand::TakeOffTheSyrup => {
-                for value in stack.iter_mut() {
+                for value in &mut stack {
                     *value = value.checked_sub(1).ok_or(Error::PancakeUnderflow)?;
                 }
             }
@@ -224,6 +224,9 @@ where
 /// pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
 /// # }
 /// ```
+///
+/// # Errors
+/// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
 pub fn run_program_str<I, O>(program: &str, input: I, output: O) -> Result<(), Error>
 where
     I: Read,
@@ -250,6 +253,9 @@ where
 /// pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
 /// # }
 /// ```
+///
+/// # Errors
+/// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
 pub fn run_program<I, O>(
     program: &[BorrowedCommand<'_>],
     input: I,
@@ -271,6 +277,7 @@ where
 
         // println!("{:?} {:?}", stack, command);
 
+        // TODO: Deduplicate this code
         match command {
             BorrowedCommand::PutThisPancakeOnTop(adjective) => {
                 stack.push(adjective.graphemes(true).count() as u32);
@@ -302,7 +309,7 @@ where
                 let buf = input.fill_buf()?;
                 let number_input = *buf.get(0).unwrap_or(&0);
                 input.consume(1);
-                stack.push(number_input as u32);
+                stack.push(u32::from(number_input));
             }
             BorrowedCommand::ShowMeAPancake => {
                 if stack.is_empty() {
@@ -351,7 +358,7 @@ where
                 if top == 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or_else(|| Error::UndefinedLabel(target_label.to_string()))?;
+                        .ok_or_else(|| Error::UndefinedLabel((*target_label).to_string()))?;
                     current_statement = *label_position;
                 }
             }
@@ -363,12 +370,12 @@ where
                 if top != 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or_else(|| Error::UndefinedLabel(target_label.to_string()))?;
+                        .ok_or_else(|| Error::UndefinedLabel((*target_label).to_string()))?;
                     current_statement = *label_position;
                 }
             }
             BorrowedCommand::PutSyrupOnThePancakes => {
-                for value in stack.iter_mut() {
+                for value in &mut stack {
                     *value = value.checked_add(1).ok_or(Error::PancakeOverflow)?;
                 }
             }
@@ -380,7 +387,7 @@ where
                 *top = top.checked_add(1).ok_or(Error::PancakeOverflow)?;
             }
             BorrowedCommand::TakeOffTheSyrup => {
-                for value in stack.iter_mut() {
+                for value in &mut stack {
                     *value = value.checked_sub(1).ok_or(Error::PancakeUnderflow)?;
                 }
             }

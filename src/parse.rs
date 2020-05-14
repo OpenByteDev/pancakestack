@@ -17,6 +17,7 @@ use std::fmt::{self, Display};
 /// let program = pancakestack::parse_program_str(&program_str);
 /// # }
 /// ```
+#[must_use]
 pub fn parse_program_str<'a>(program: &'a str) -> Vec<BorrowedCommand<'a>> {
     program
         .lines()
@@ -51,7 +52,10 @@ pub enum BorrowedCommand<'a> {
 impl<'a> BorrowedCommand<'a> {
     /// Parses the given line as a pancake stack command.
     /// The command will reference the strings contents.
-    pub fn from_line(line: &'a str) -> Result<Self, ParseCommandError<'a>> {
+    ///
+    /// # Errors
+    /// Will return `Err` if the given line cannot be parsed as a command.
+    pub fn from_line(line: &'a str) -> Result<Self, CommandParseError<'a>> {
         lazy_static! {
             static ref PUT_THIS_PANCAKE_ON_TOP_REGEX: Regex =
                 Regex::new(r"^Put this (\S*) pancake on top!$").unwrap();
@@ -102,15 +106,16 @@ impl<'a> BorrowedCommand<'a> {
                     ));
                 }
 
-                Err(ParseCommandError::new(line))
+                Err(CommandParseError::new(line))
             }
         }
     }
     /// Converts this command into an [`OwnedCommand`](./enum.OwnedCommand.html) heap allocating the referenced [`str`](https://doc.rust-lang.org/std/str/)s.
+    #[must_use]
     pub fn to_owned(&self) -> OwnedCommand {
         match self {
             BorrowedCommand::PutThisPancakeOnTop(adj) => {
-                OwnedCommand::PutThisPancakeOnTop(adj.to_string())
+                OwnedCommand::PutThisPancakeOnTop((*adj).to_string())
             }
             BorrowedCommand::EatThePancakeOnTop => OwnedCommand::EatThePancakeOnTop,
             BorrowedCommand::PutTheTopPancakesTogether => OwnedCommand::PutTheTopPancakesTogether,
@@ -120,12 +125,12 @@ impl<'a> BorrowedCommand<'a> {
             BorrowedCommand::TakeFromTheTopPancakes => OwnedCommand::TakeFromTheTopPancakes,
             BorrowedCommand::FlipThePancakesOnTop => OwnedCommand::FlipThePancakesOnTop,
             BorrowedCommand::PutAnotherPancakeOnTop => OwnedCommand::PutAnotherPancakeOnTop,
-            BorrowedCommand::Label(label) => OwnedCommand::Label(label.to_string()),
+            BorrowedCommand::Label(label) => OwnedCommand::Label((*label).to_string()),
             BorrowedCommand::IfThePancakeIsntTastyGoOverTo(label) => {
-                OwnedCommand::IfThePancakeIsntTastyGoOverTo(label.to_string())
+                OwnedCommand::IfThePancakeIsntTastyGoOverTo((*label).to_string())
             }
             BorrowedCommand::IfThePancakeIsTastyGoOverTo(label) => {
-                OwnedCommand::IfThePancakeIsTastyGoOverTo(label.to_string())
+                OwnedCommand::IfThePancakeIsTastyGoOverTo((*label).to_string())
             }
             BorrowedCommand::PutSyrupOnThePancakes => OwnedCommand::PutSyrupOnThePancakes,
             BorrowedCommand::PutButterOnThePancakes => OwnedCommand::PutButterOnThePancakes,
@@ -163,14 +168,20 @@ pub enum OwnedCommand {
 impl OwnedCommand {
     /// Parses the given line as a pancake stack command.
     /// The command will clone parts of the string (labels and adjectives).
-    pub fn from_line(line: &'_ str) -> Result<Self, ParseCommandError<'_>> {
+    ///
+    /// # Errors
+    /// Will return `Err` if the given line cannot be parsed as a command.
+    pub fn from_line(line: &'_ str) -> Result<Self, CommandParseError<'_>> {
         BorrowedCommand::from_line(line).map(|e| e.to_owned())
     }
 
     /// Converts this command into an [`BorrowedCommand`](./enum.BorrowedCommand.html) referencing the strings in the original command.
+    #[must_use]
     pub fn borrow(&'_ self) -> BorrowedCommand<'_> {
         match self {
-            OwnedCommand::PutThisPancakeOnTop(adj) => BorrowedCommand::PutThisPancakeOnTop(&adj),
+            OwnedCommand::PutThisPancakeOnTop(ref adj) => {
+                BorrowedCommand::PutThisPancakeOnTop(&adj)
+            }
             OwnedCommand::EatThePancakeOnTop => BorrowedCommand::EatThePancakeOnTop,
             OwnedCommand::PutTheTopPancakesTogether => BorrowedCommand::PutTheTopPancakesTogether,
             OwnedCommand::GiveMeAPancake => BorrowedCommand::GiveMeAPancake,
@@ -196,23 +207,25 @@ impl OwnedCommand {
 }
 
 #[derive(Debug)]
-pub struct ParseCommandError<'line> {
+pub struct CommandParseError<'line> {
     line: &'line str,
 }
-impl<'line> ParseCommandError<'line> {
+impl<'line> CommandParseError<'line> {
+    #[must_use]
     pub fn new(line: &'line str) -> Self {
-        ParseCommandError { line }
+        CommandParseError { line }
     }
+    #[must_use]
     pub fn line(&self) -> &str {
         self.line
     }
 }
-impl Display for ParseCommandError<'_> {
+impl Display for CommandParseError<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Failed to parse command: {}", self.line())
     }
 }
-impl std::error::Error for ParseCommandError<'_> {
+impl std::error::Error for CommandParseError<'_> {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         None
     }
