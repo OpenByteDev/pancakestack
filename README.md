@@ -75,12 +75,12 @@ let output = std::str::from_utf8(&output_buf).unwrap();
 
 A program can be parsed from a [`str`](https://doc.rust-lang.org/std/str/) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program_str.html). A single line (=command) can be parsed with [`BorrowedCommand::from_line`](https://docs.rs/pancakestack/*/pancakestack/parse/enum.BorrowedCommand.html#method.from_line).
 
-Programs can be constructed by creating a [`Vec`](https://doc.rust-lang.org/std/vec/) of [`BorrowedCommand`](https://docs.rs/pancakestack/*/pancakestack/parse/enum.BorrowedCommand.html)s and ran with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program.html).
+Parsed programs are slices of [`BorrowedCommand`](https://docs.rs/pancakestack/*/pancakestack/parse/enum.BorrowedCommand.html)s and can be run with [`pancakestack::run_program`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program.html).
 
 ```rust
 use pancakestack::BorrowedCommand;
 
-let program = vec![
+let program = [
     BorrowedCommand::PutThisPancakeOnTop("test"),
     BorrowedCommand::ShowMeAPancake,
     BorrowedCommand::EatAllOfThePancakes

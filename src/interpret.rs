@@ -107,7 +107,7 @@ where
             }
             OwnedCommand::HowAboutAHotcake => {
                 let buf = input.fill_buf()?;
-                let number_input = if buf.len() == 0 { 0 } else { buf[0] };
+                let number_input = *buf.get(0).unwrap_or(&0);
                 input.consume(1);
                 stack.push(number_input as u32);
             }
@@ -141,7 +141,7 @@ where
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
-                stack.push(stack.last().unwrap().clone());
+                stack.push(*stack.last().unwrap());
             }
             OwnedCommand::Label(label) => {
                 if stack.is_empty() {
@@ -158,7 +158,7 @@ where
                 if top == 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or(Error::UndefinedLabel(target_label.clone()))?;
+                        .ok_or_else(|| Error::UndefinedLabel(target_label.clone()))?;
                     current_statement = Some(*label_position);
                 }
             }
@@ -170,7 +170,7 @@ where
                 if top != 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or(Error::UndefinedLabel(target_label.clone()))?;
+                        .ok_or_else(|| Error::UndefinedLabel(target_label.clone()))?;
                     current_statement = Some(*label_position);
                 }
             }
@@ -233,7 +233,7 @@ where
     run_program(&parsed, input, output)
 }
 
-/// Runs the given commands using the provided input and output.
+/// Runs the given slice of commands using the provided input and output.
 /// ```rust
 /// # use std::fs::File;
 /// # use std::io::Read;
@@ -251,7 +251,7 @@ where
 /// # }
 /// ```
 pub fn run_program<I, O>(
-    program: &Vec<BorrowedCommand<'_>>,
+    program: &[BorrowedCommand<'_>],
     input: I,
     mut output: O,
 ) -> Result<(), Error>
@@ -260,16 +260,13 @@ where
     O: Write,
 {
     let mut input = BufReader::new(input);
+    let mut in_line = String::new();
 
     let mut stack = Vec::new();
     let mut labels = HashMap::new();
+
     let mut current_statement: usize = 0;
-    let mut in_line = String::new();
-    loop {
-        let command = match program.get(current_statement) {
-            Some(c) => c,
-            None => break,
-        };
+    while let Some(command) = program.get(current_statement) {
         current_statement += 1;
 
         // println!("{:?} {:?}", stack, command);
@@ -303,7 +300,7 @@ where
             }
             BorrowedCommand::HowAboutAHotcake => {
                 let buf = input.fill_buf()?;
-                let number_input = if buf.len() == 0 { 0 } else { buf[0] };
+                let number_input = *buf.get(0).unwrap_or(&0);
                 input.consume(1);
                 stack.push(number_input as u32);
             }
@@ -337,14 +334,14 @@ where
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
-                stack.push(stack.last().unwrap().clone());
+                stack.push(*stack.last().unwrap());
             }
             BorrowedCommand::Label(label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last().unwrap();
-                labels.insert(label.clone(), (*top - 1) as usize);
+                labels.insert(*label, (*top - 1) as usize);
             }
             BorrowedCommand::IfThePancakeIsntTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
@@ -354,7 +351,7 @@ where
                 if top == 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or(Error::UndefinedLabel(target_label.to_string()))?;
+                        .ok_or_else(|| Error::UndefinedLabel(target_label.to_string()))?;
                     current_statement = *label_position;
                 }
             }
@@ -366,7 +363,7 @@ where
                 if top != 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or(Error::UndefinedLabel(target_label.to_string()))?;
+                        .ok_or_else(|| Error::UndefinedLabel(target_label.to_string()))?;
                     current_statement = *label_position;
                 }
             }

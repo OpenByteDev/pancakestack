@@ -24,37 +24,6 @@ pub fn parse_program_str<'a>(program: &'a str) -> Vec<BorrowedCommand<'a>> {
         .collect()
 }
 
-lazy_static! {
-    static ref PUT_THIS_PANCAKE_ON_TOP_REGEX: Regex =
-        Regex::new(r"^Put this (\S*) pancake on top!$").unwrap();
-    static ref EAT_THE_PANCAKE_ON_TOP_REGEX: Regex =
-        Regex::new(r"^Eat the pancake on top!$").unwrap();
-    static ref PUT_THE_TOP_PANCAKES_TOGETHER_REGEX: Regex =
-        Regex::new(r"^Put the top pancakes together!$").unwrap();
-    static ref GIVE_ME_A_PANCAKE_REGEX: Regex = Regex::new(r"^Give me a pancake!$").unwrap();
-    static ref HOW_ABOUT_A_HOTCAKE_REGEX: Regex = Regex::new(r"^How about a hotcake\?$").unwrap();
-    static ref SHOW_ME_A_PANCAKE_REGEX: Regex = Regex::new(r"^Show me a pancake!$").unwrap();
-    static ref TAKE_FROM_THE_TOP_PANCAKES_REGEX: Regex =
-        Regex::new(r"^Take from the top pancakes!$").unwrap();
-    static ref FLIP_THE_PANCAKES_ON_TOP_REGEX: Regex =
-        Regex::new(r"^Flip the pancakes on top!$").unwrap();
-    static ref PUT_ANOTHER_PANCAKE_ON_TOP_REGEX: Regex =
-        Regex::new(r"^Put another pancake on top!$").unwrap();
-    static ref LABEL_REGEX: Regex = Regex::new(r"^\[(.+)\]$").unwrap();
-    static ref IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX: Regex =
-        Regex::new("^If the pancake isn't tasty, go over to \"(.*)\"\\.$").unwrap();
-    static ref IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX: Regex =
-        Regex::new("^If the pancake is tasty, go over to \"(.*)\"\\.$").unwrap();
-    static ref PUT_SYRUP_ON_THE_PANCAKES_REGEX: Regex =
-        Regex::new(r"^Put syrup on the pancakes!$").unwrap();
-    static ref PUT_BUTTER_ON_THE_PANCAKES_REGEX: Regex =
-        Regex::new(r"^Put butter on the pancakes!$").unwrap();
-    static ref TAKE_OFF_THE_SYRUP_REGEX: Regex = Regex::new(r"^Take off the syrup!$").unwrap();
-    static ref TAKE_OFF_THE_BUTTER_REGEX: Regex = Regex::new(r"^Take off the butter!$").unwrap();
-    static ref EAT_ALL_OF_THE_PANCAKES_REGEX: Regex =
-        Regex::new(r"^Eat all of the pancakes!$").unwrap();
-}
-
 /// An enum representing a pancakestack command.
 /// Labels and pancake adjectives are stored in [`str`](https://doc.rust-lang.org/std/str/)s .
 /// See [`OwnedCommand`](./enum.OwnedCommand.html) for a version that uses [`String`](https://doc.rust-lang.org/std/string/struct.String.html)s.
@@ -83,73 +52,62 @@ impl<'a> BorrowedCommand<'a> {
     /// Parses the given line as a pancake stack command.
     /// The command will reference the strings contents.
     pub fn from_line(line: &'a str) -> Result<Self, ParseCommandError<'a>> {
-        if let Some(captures) = PUT_THIS_PANCAKE_ON_TOP_REGEX.captures_iter(line).next() {
-            return Ok(BorrowedCommand::PutThisPancakeOnTop(
-                captures.get(1).unwrap().as_str(),
-            ));
+        lazy_static! {
+            static ref PUT_THIS_PANCAKE_ON_TOP_REGEX: Regex =
+                Regex::new(r"^Put this (\S*) pancake on top!$").unwrap();
+            static ref LABEL_REGEX: Regex = Regex::new(r"^\[(.+)\]$").unwrap();
+            static ref IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX: Regex =
+                Regex::new("^If the pancake isn't tasty, go over to \"(.*)\"\\.$").unwrap();
+            static ref IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX: Regex =
+                Regex::new("^If the pancake is tasty, go over to \"(.*)\"\\.$").unwrap();
         }
-        if EAT_THE_PANCAKE_ON_TOP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::EatThePancakeOnTop);
+
+        match line {
+            "Eat the pancake on top!" => Ok(BorrowedCommand::EatThePancakeOnTop),
+            "Put the top pancakes together!" => Ok(BorrowedCommand::PutTheTopPancakesTogether),
+            "Give me a pancake!" => Ok(BorrowedCommand::GiveMeAPancake),
+            "How about a hotcake?" => Ok(BorrowedCommand::HowAboutAHotcake),
+            "Show me a pancake!" => Ok(BorrowedCommand::ShowMeAPancake),
+            "Take from the top pancakes!" => Ok(BorrowedCommand::TakeFromTheTopPancakes),
+            "Flip the pancakes on top!" => Ok(BorrowedCommand::FlipThePancakesOnTop),
+            "Put another pancake on top!" => Ok(BorrowedCommand::PutAnotherPancakeOnTop),
+            "Put syrup on the pancakes!" => Ok(BorrowedCommand::PutSyrupOnThePancakes),
+            "Put butter on the pancakes!" => Ok(BorrowedCommand::PutButterOnThePancakes),
+            "Take off the syrup!" => Ok(BorrowedCommand::TakeOffTheSyrup),
+            "Take off the butter!" => Ok(BorrowedCommand::TakeOffTheButter),
+            "Eat all of the pancakes!" => Ok(BorrowedCommand::EatAllOfThePancakes),
+            _ => {
+                if let Some(captures) = PUT_THIS_PANCAKE_ON_TOP_REGEX.captures_iter(line).next() {
+                    return Ok(BorrowedCommand::PutThisPancakeOnTop(
+                        captures.get(1).unwrap().as_str(),
+                    ));
+                }
+                if let Some(captures) = LABEL_REGEX.captures_iter(line).next() {
+                    return Ok(BorrowedCommand::Label(captures.get(1).unwrap().as_str()));
+                }
+                if let Some(captures) = IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX
+                    .captures_iter(line)
+                    .next()
+                {
+                    return Ok(BorrowedCommand::IfThePancakeIsntTastyGoOverTo(
+                        captures.get(1).unwrap().as_str(),
+                    ));
+                }
+                if let Some(captures) = IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX
+                    .captures_iter(line)
+                    .next()
+                {
+                    return Ok(BorrowedCommand::IfThePancakeIsTastyGoOverTo(
+                        captures.get(1).unwrap().as_str(),
+                    ));
+                }
+
+                Err(ParseCommandError::new(line))
+            }
         }
-        if PUT_THE_TOP_PANCAKES_TOGETHER_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutTheTopPancakesTogether);
-        }
-        if GIVE_ME_A_PANCAKE_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::GiveMeAPancake);
-        }
-        if HOW_ABOUT_A_HOTCAKE_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::HowAboutAHotcake);
-        }
-        if SHOW_ME_A_PANCAKE_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::ShowMeAPancake);
-        }
-        if TAKE_FROM_THE_TOP_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::TakeFromTheTopPancakes);
-        }
-        if FLIP_THE_PANCAKES_ON_TOP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::FlipThePancakesOnTop);
-        }
-        if PUT_ANOTHER_PANCAKE_ON_TOP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutAnotherPancakeOnTop);
-        }
-        if let Some(captures) = LABEL_REGEX.captures_iter(line).next() {
-            return Ok(BorrowedCommand::Label(captures.get(1).unwrap().as_str()));
-        }
-        if let Some(captures) = IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX
-            .captures_iter(line)
-            .next()
-        {
-            return Ok(BorrowedCommand::IfThePancakeIsntTastyGoOverTo(
-                captures.get(1).unwrap().as_str(),
-            ));
-        }
-        if let Some(captures) = IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX
-            .captures_iter(line)
-            .next()
-        {
-            return Ok(BorrowedCommand::IfThePancakeIsTastyGoOverTo(
-                captures.get(1).unwrap().as_str(),
-            ));
-        }
-        if PUT_SYRUP_ON_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutSyrupOnThePancakes);
-        }
-        if PUT_BUTTER_ON_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::PutButterOnThePancakes);
-        }
-        if TAKE_OFF_THE_SYRUP_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::TakeOffTheSyrup);
-        }
-        if TAKE_OFF_THE_BUTTER_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::TakeOffTheButter);
-        }
-        if EAT_ALL_OF_THE_PANCAKES_REGEX.is_match(line) {
-            return Ok(BorrowedCommand::EatAllOfThePancakes);
-        }
-        Err(ParseCommandError::new(line))
     }
     /// Converts this command into an [`OwnedCommand`](./enum.OwnedCommand.html) heap allocating the referenced [`str`](https://doc.rust-lang.org/std/str/)s.
-    pub fn to_owned(self) -> OwnedCommand {
+    pub fn to_owned(&self) -> OwnedCommand {
         match self {
             BorrowedCommand::PutThisPancakeOnTop(adj) => {
                 OwnedCommand::PutThisPancakeOnTop(adj.to_string())
@@ -205,12 +163,12 @@ pub enum OwnedCommand {
 impl OwnedCommand {
     /// Parses the given line as a pancake stack command.
     /// The command will clone parts of the string (labels and adjectives).
-    pub fn from_line<'a>(line: &'a str) -> Result<Self, ParseCommandError<'a>> {
+    pub fn from_line(line: &'_ str) -> Result<Self, ParseCommandError<'_>> {
         BorrowedCommand::from_line(line).map(|e| e.to_owned())
     }
 
     /// Converts this command into an [`BorrowedCommand`](./enum.BorrowedCommand.html) referencing the strings in the original command.
-    pub fn borrow<'a>(&'a self) -> BorrowedCommand<'a> {
+    pub fn borrow(&'_ self) -> BorrowedCommand<'_> {
         match self {
             OwnedCommand::PutThisPancakeOnTop(adj) => BorrowedCommand::PutThisPancakeOnTop(&adj),
             OwnedCommand::EatThePancakeOnTop => BorrowedCommand::EatThePancakeOnTop,
