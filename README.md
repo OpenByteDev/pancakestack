@@ -37,7 +37,7 @@ let program = pancakestack::parse_program_str(&program_str);
 pancakestack::run_program(&program, std::io::stdin(), std::io::stdout()).unwrap();
 ```
 
-Alternatively you can run a program from a [str](https://doc.rust-lang.org/std/primitive.str.html) or a [Read](https://doc.rust-lang.org/std/io/trait.Read.html) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program_str.html) and [`pancakestack::run_program_from_read`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program_from_read.html) respectively.
+Alternatively you can run a program from a [`str`](https://doc.rust-lang.org/std/primitive.str.html) or a [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) with [`pancakestack::run_program_str`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program_str.html) and [`pancakestack::run_program_from_read`](https://docs.rs/pancakestack/*/pancakestack/interpret/fn.run_program_from_read.html) respectively.
 
 ```rust
 // load script file
