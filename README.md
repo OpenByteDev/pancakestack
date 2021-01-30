@@ -15,7 +15,7 @@ This is a Rust implementation of the [Pancake Stack](https://esolangs.org/wiki/P
 To use pancakestack, first include this in your Cargo.toml:
 ```toml
 [dependencies]
-"pancakestack" = "0.3"
+"pancakestack" = "0.4"
 ```
 
 ## Crate Examples
