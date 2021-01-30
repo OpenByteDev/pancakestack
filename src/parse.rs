@@ -18,7 +18,7 @@ use std::fmt::{self, Display};
 /// # }
 /// ```
 #[must_use]
-pub fn parse_program_str<'a>(program: &'a str) -> Vec<BorrowedCommand<'a>> {
+pub fn parse_program_str(program: &str) -> Vec<BorrowedCommand> {
     program
         .lines()
         .filter_map(|line| BorrowedCommand::from_line(line).ok())

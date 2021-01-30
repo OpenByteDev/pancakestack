@@ -101,7 +101,7 @@ where
                 input.read_line(&mut in_line)?;
                 let number_input = in_line
                     .parse()
-                    .or_else(|_| Err(Error::InvalidPancake(in_line.clone())))?;
+                    .map_err(|_| Error::InvalidPancake(in_line.clone()))?;
                 stack.push(number_input);
                 in_line.clear();
             }
@@ -301,7 +301,7 @@ where
                 input.read_line(&mut in_line)?;
                 let number_input = in_line
                     .parse()
-                    .or_else(|_| Err(Error::InvalidPancake(in_line.clone())))?;
+                    .map_err(|_| Error::InvalidPancake(in_line.clone()))?;
                 stack.push(number_input);
                 in_line.clear();
             }
