@@ -2,7 +2,8 @@
 
 [![crates.io](https://img.shields.io/crates/v/pancakestack.svg)](https://crates.io/crates/pancakestack)
 [![Documentation](https://docs.rs/pancakestack/badge.svg)](https://docs.rs/pancakestack)
-[![MIT](https://img.shields.io/crates/l/pancakestack.svg)](./LICENSE)
+[![dependency status](https://deps.rs/repo/github/openbytedev/pancakestack/status.svg)](https://deps.rs/repo/github/openbytedev/pancakestack)
+[![MIT](https://img.shields.io/crates/l/pancakestack.svg)](https://github.com/OpenByteDev/pancakestack/blob/master/LICENSE)
 
 This is a Rust implementation of the [Pancake Stack](https://esolangs.org/wiki/Pancake_Stack) esoteric programming language. This crate includes a parser and an interpreter.
 
@@ -221,4 +222,4 @@ Eat all of the pancakes!
 Other examples can be found in the [examples](https://github.com/OpenByteDev/pancakestack/tree/master/examples) directory.
 
 ## License
-Licensed under MIT license ([LICENSE](./LICENSE) or http://opensource.org/licenses/MIT)
+Licensed under MIT license ([LICENSE](https://github.com/OpenByteDev/pancakestack/blob/master/LICENSE) or http://opensource.org/licenses/MIT)
