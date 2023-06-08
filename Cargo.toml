@@ -21,7 +21,7 @@ maintenance = { status = "passively-maintained" }
 "unicode-segmentation" = "1.10"
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
 
 [[bench]]
 name = "bench"
