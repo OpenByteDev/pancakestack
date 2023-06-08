@@ -1,5 +1,9 @@
+use lazy_regex::{lazy_regex, Lazy};
 use regex::Regex;
-use std::fmt::{self, Display};
+use std::{
+    borrow::Cow,
+    fmt::{self, Display},
+};
 
 /// Parses the given str into an vec of commands.
 /// Each command has to be on its own line.
@@ -18,19 +22,19 @@ use std::fmt::{self, Display};
 /// # }
 /// ```
 #[must_use]
-pub fn parse_program_str(program: &str) -> Vec<BorrowedCommand> {
+pub fn parse_program_str(program: &str) -> Vec<Command> {
     program
         .lines()
-        .filter_map(|line| BorrowedCommand::from_line(line).ok())
+        .filter_map(|line| Command::from_line(line).ok())
         .collect()
 }
 
 /// An enum representing a pancakestack command.
 /// Labels and pancake adjectives are stored in [`str`](https://doc.rust-lang.org/std/str/)s .
-/// See [`OwnedCommand`](./enum.OwnedCommand.html) for a version that uses [`String`](https://doc.rust-lang.org/std/string/struct.String.html)s.
+/// See [`Command`](./enum.Command.html) for a version that uses [`String`](https://doc.rust-lang.org/std/string/struct.String.html)s.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum BorrowedCommand<'a> {
-    PutThisPancakeOnTop(&'a str),
+pub enum Command<'a> {
+    PutThisPancakeOnTop(Cow<'a, str>),
     EatThePancakeOnTop,
     PutTheTopPancakesTogether,
     GiveMeAPancake,
@@ -39,9 +43,9 @@ pub enum BorrowedCommand<'a> {
     TakeFromTheTopPancakes,
     FlipThePancakesOnTop,
     PutAnotherPancakeOnTop,
-    Label(&'a str),
-    IfThePancakeIsntTastyGoOverTo(&'a str),
-    IfThePancakeIsTastyGoOverTo(&'a str),
+    Label(Cow<'a, str>),
+    IfThePancakeIsntTastyGoOverTo(Cow<'a, str>),
+    IfThePancakeIsTastyGoOverTo(Cow<'a, str>),
     PutSyrupOnThePancakes,
     PutButterOnThePancakes,
     TakeOffTheSyrup,
@@ -49,60 +53,58 @@ pub enum BorrowedCommand<'a> {
     EatAllOfThePancakes,
 }
 
-impl<'a> BorrowedCommand<'a> {
+static PUT_THIS_PANCAKE_ON_TOP_REGEX: Lazy<Regex> =
+    lazy_regex!(r"^Put this (\S*) pancake on top!$");
+static LABEL_REGEX: Lazy<Regex> = lazy_regex!(r"^\[(.+)\]$");
+static IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX: Lazy<Regex> =
+    lazy_regex!("^If the pancake isn't tasty, go over to \"(.*)\"\\.$");
+static IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX: Lazy<Regex> =
+    lazy_regex!("^If the pancake is tasty, go over to \"(.*)\"\\.$");
+
+impl<'a> Command<'a> {
     /// Parses the given line as a pancake stack command.
     /// The command will reference the strings contents.
     ///
     /// # Errors
-    /// Will return `Err` if the given line cannot be parsed as a command.
+    /// Will return [`Err`] if the given line cannot be parsed as a command.
     pub fn from_line(line: &'a str) -> Result<Self, CommandParseError<'a>> {
-        lazy_static! {
-            static ref PUT_THIS_PANCAKE_ON_TOP_REGEX: Regex =
-                Regex::new(r"^Put this (\S*) pancake on top!$").unwrap();
-            static ref LABEL_REGEX: Regex = Regex::new(r"^\[(.+)\]$").unwrap();
-            static ref IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX: Regex =
-                Regex::new("^If the pancake isn't tasty, go over to \"(.*)\"\\.$").unwrap();
-            static ref IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX: Regex =
-                Regex::new("^If the pancake is tasty, go over to \"(.*)\"\\.$").unwrap();
-        }
-
         match line {
-            "Eat the pancake on top!" => Ok(BorrowedCommand::EatThePancakeOnTop),
-            "Put the top pancakes together!" => Ok(BorrowedCommand::PutTheTopPancakesTogether),
-            "Give me a pancake!" => Ok(BorrowedCommand::GiveMeAPancake),
-            "How about a hotcake?" => Ok(BorrowedCommand::HowAboutAHotcake),
-            "Show me a pancake!" => Ok(BorrowedCommand::ShowMeAPancake),
-            "Take from the top pancakes!" => Ok(BorrowedCommand::TakeFromTheTopPancakes),
-            "Flip the pancakes on top!" => Ok(BorrowedCommand::FlipThePancakesOnTop),
-            "Put another pancake on top!" => Ok(BorrowedCommand::PutAnotherPancakeOnTop),
-            "Put syrup on the pancakes!" => Ok(BorrowedCommand::PutSyrupOnThePancakes),
-            "Put butter on the pancakes!" => Ok(BorrowedCommand::PutButterOnThePancakes),
-            "Take off the syrup!" => Ok(BorrowedCommand::TakeOffTheSyrup),
-            "Take off the butter!" => Ok(BorrowedCommand::TakeOffTheButter),
-            "Eat all of the pancakes!" => Ok(BorrowedCommand::EatAllOfThePancakes),
+            "Eat the pancake on top!" => Ok(Self::EatThePancakeOnTop),
+            "Put the top pancakes together!" => Ok(Self::PutTheTopPancakesTogether),
+            "Give me a pancake!" => Ok(Self::GiveMeAPancake),
+            "How about a hotcake?" => Ok(Self::HowAboutAHotcake),
+            "Show me a pancake!" => Ok(Self::ShowMeAPancake),
+            "Take from the top pancakes!" => Ok(Self::TakeFromTheTopPancakes),
+            "Flip the pancakes on top!" => Ok(Self::FlipThePancakesOnTop),
+            "Put another pancake on top!" => Ok(Self::PutAnotherPancakeOnTop),
+            "Put syrup on the pancakes!" => Ok(Self::PutSyrupOnThePancakes),
+            "Put butter on the pancakes!" => Ok(Self::PutButterOnThePancakes),
+            "Take off the syrup!" => Ok(Self::TakeOffTheSyrup),
+            "Take off the butter!" => Ok(Self::TakeOffTheButter),
+            "Eat all of the pancakes!" => Ok(Self::EatAllOfThePancakes),
             _ => {
                 if let Some(captures) = PUT_THIS_PANCAKE_ON_TOP_REGEX.captures_iter(line).next() {
-                    return Ok(BorrowedCommand::PutThisPancakeOnTop(
-                        captures.get(1).unwrap().as_str(),
+                    return Ok(Self::PutThisPancakeOnTop(
+                        captures.get(1).unwrap().as_str().into(),
                     ));
                 }
                 if let Some(captures) = LABEL_REGEX.captures_iter(line).next() {
-                    return Ok(BorrowedCommand::Label(captures.get(1).unwrap().as_str()));
+                    return Ok(Self::Label(captures.get(1).unwrap().as_str().into()));
                 }
                 if let Some(captures) = IF_THE_PANCAKE_ISNT_TASTY_GO_OVER_TO_REGEX
                     .captures_iter(line)
                     .next()
                 {
-                    return Ok(BorrowedCommand::IfThePancakeIsntTastyGoOverTo(
-                        captures.get(1).unwrap().as_str(),
+                    return Ok(Self::IfThePancakeIsntTastyGoOverTo(
+                        captures.get(1).unwrap().as_str().into(),
                     ));
                 }
                 if let Some(captures) = IF_THE_PANCAKE_IS_TASTY_GO_OVER_TO_REGEX
                     .captures_iter(line)
                     .next()
                 {
-                    return Ok(BorrowedCommand::IfThePancakeIsTastyGoOverTo(
-                        captures.get(1).unwrap().as_str(),
+                    return Ok(Self::IfThePancakeIsTastyGoOverTo(
+                        captures.get(1).unwrap().as_str().into(),
                     ));
                 }
 
@@ -110,98 +112,116 @@ impl<'a> BorrowedCommand<'a> {
             }
         }
     }
-    /// Converts this command into an [`OwnedCommand`](./enum.OwnedCommand.html) heap allocating the referenced [`str`](https://doc.rust-lang.org/std/str/)s.
+
+    /// Creates a new owned version of this command, heap allocating the referenced [`str`]s.
     #[must_use]
-    pub fn to_owned(&self) -> OwnedCommand {
+    pub fn to_owned(&self) -> Command<'static> {
         match self {
-            BorrowedCommand::PutThisPancakeOnTop(adj) => {
-                OwnedCommand::PutThisPancakeOnTop((*adj).to_string())
+            Self::PutThisPancakeOnTop(adj) => Command::PutThisPancakeOnTop(adj.to_string().into()),
+            Self::EatThePancakeOnTop => Command::EatThePancakeOnTop,
+            Self::PutTheTopPancakesTogether => Command::PutTheTopPancakesTogether,
+            Self::GiveMeAPancake => Command::GiveMeAPancake,
+            Self::HowAboutAHotcake => Command::HowAboutAHotcake,
+            Self::ShowMeAPancake => Command::ShowMeAPancake,
+            Self::TakeFromTheTopPancakes => Command::TakeFromTheTopPancakes,
+            Self::FlipThePancakesOnTop => Command::FlipThePancakesOnTop,
+            Self::PutAnotherPancakeOnTop => Command::PutAnotherPancakeOnTop,
+            Self::Label(label) => Command::Label(label.to_string().into()),
+            Self::IfThePancakeIsntTastyGoOverTo(label) => {
+                Command::IfThePancakeIsntTastyGoOverTo(label.to_string().into())
             }
-            BorrowedCommand::EatThePancakeOnTop => OwnedCommand::EatThePancakeOnTop,
-            BorrowedCommand::PutTheTopPancakesTogether => OwnedCommand::PutTheTopPancakesTogether,
-            BorrowedCommand::GiveMeAPancake => OwnedCommand::GiveMeAPancake,
-            BorrowedCommand::HowAboutAHotcake => OwnedCommand::HowAboutAHotcake,
-            BorrowedCommand::ShowMeAPancake => OwnedCommand::ShowMeAPancake,
-            BorrowedCommand::TakeFromTheTopPancakes => OwnedCommand::TakeFromTheTopPancakes,
-            BorrowedCommand::FlipThePancakesOnTop => OwnedCommand::FlipThePancakesOnTop,
-            BorrowedCommand::PutAnotherPancakeOnTop => OwnedCommand::PutAnotherPancakeOnTop,
-            BorrowedCommand::Label(label) => OwnedCommand::Label((*label).to_string()),
-            BorrowedCommand::IfThePancakeIsntTastyGoOverTo(label) => {
-                OwnedCommand::IfThePancakeIsntTastyGoOverTo((*label).to_string())
+            Self::IfThePancakeIsTastyGoOverTo(label) => {
+                Command::IfThePancakeIsTastyGoOverTo(label.to_string().into())
             }
-            BorrowedCommand::IfThePancakeIsTastyGoOverTo(label) => {
-                OwnedCommand::IfThePancakeIsTastyGoOverTo((*label).to_string())
+            Self::PutSyrupOnThePancakes => Command::PutSyrupOnThePancakes,
+            Self::PutButterOnThePancakes => Command::PutButterOnThePancakes,
+            Self::TakeOffTheSyrup => Command::TakeOffTheSyrup,
+            Self::TakeOffTheButter => Command::TakeOffTheButter,
+            Self::EatAllOfThePancakes => Command::EatAllOfThePancakes,
+        }
+    }
+
+    /// Consumes this command, converting it to an owned version, heap allocating the referenced [`str`]s if they are not already owned.
+    #[must_use]
+    pub fn into_owned(self) -> Command<'static> {
+        match self {
+            Self::PutThisPancakeOnTop(adj) => Command::PutThisPancakeOnTop(adj.into_owned().into()),
+            Self::EatThePancakeOnTop => Command::EatThePancakeOnTop,
+            Self::PutTheTopPancakesTogether => Command::PutTheTopPancakesTogether,
+            Self::GiveMeAPancake => Command::GiveMeAPancake,
+            Self::HowAboutAHotcake => Command::HowAboutAHotcake,
+            Self::ShowMeAPancake => Command::ShowMeAPancake,
+            Self::TakeFromTheTopPancakes => Command::TakeFromTheTopPancakes,
+            Self::FlipThePancakesOnTop => Command::FlipThePancakesOnTop,
+            Self::PutAnotherPancakeOnTop => Command::PutAnotherPancakeOnTop,
+            Self::Label(label) => Command::Label(label.into_owned().into()),
+            Self::IfThePancakeIsntTastyGoOverTo(label) => {
+                Command::IfThePancakeIsntTastyGoOverTo(label.into_owned().into())
             }
-            BorrowedCommand::PutSyrupOnThePancakes => OwnedCommand::PutSyrupOnThePancakes,
-            BorrowedCommand::PutButterOnThePancakes => OwnedCommand::PutButterOnThePancakes,
-            BorrowedCommand::TakeOffTheSyrup => OwnedCommand::TakeOffTheSyrup,
-            BorrowedCommand::TakeOffTheButter => OwnedCommand::TakeOffTheButter,
-            BorrowedCommand::EatAllOfThePancakes => OwnedCommand::EatAllOfThePancakes,
+            Self::IfThePancakeIsTastyGoOverTo(label) => {
+                Command::IfThePancakeIsTastyGoOverTo(label.into_owned().into())
+            }
+            Self::PutSyrupOnThePancakes => Command::PutSyrupOnThePancakes,
+            Self::PutButterOnThePancakes => Command::PutButterOnThePancakes,
+            Self::TakeOffTheSyrup => Command::TakeOffTheSyrup,
+            Self::TakeOffTheButter => Command::TakeOffTheButter,
+            Self::EatAllOfThePancakes => Command::EatAllOfThePancakes,
+        }
+    }
+
+    /// Creates a new borrowed version of this command.
+    #[must_use]
+    pub fn borrow(&self) -> Command<'_> {
+        match self {
+            Self::PutThisPancakeOnTop(adj) => Command::PutThisPancakeOnTop(adj.as_ref().into()),
+            Self::EatThePancakeOnTop => Command::EatThePancakeOnTop,
+            Self::PutTheTopPancakesTogether => Command::PutTheTopPancakesTogether,
+            Self::GiveMeAPancake => Command::GiveMeAPancake,
+            Self::HowAboutAHotcake => Command::HowAboutAHotcake,
+            Self::ShowMeAPancake => Command::ShowMeAPancake,
+            Self::TakeFromTheTopPancakes => Command::TakeFromTheTopPancakes,
+            Self::FlipThePancakesOnTop => Command::FlipThePancakesOnTop,
+            Self::PutAnotherPancakeOnTop => Command::PutAnotherPancakeOnTop,
+            Self::Label(label) => Command::Label(label.as_ref().into()),
+            Self::IfThePancakeIsntTastyGoOverTo(label) => {
+                Command::IfThePancakeIsntTastyGoOverTo(label.as_ref().into())
+            }
+            Self::IfThePancakeIsTastyGoOverTo(label) => {
+                Command::IfThePancakeIsTastyGoOverTo(label.as_ref().into())
+            }
+            Self::PutSyrupOnThePancakes => Command::PutSyrupOnThePancakes,
+            Self::PutButterOnThePancakes => Command::PutButterOnThePancakes,
+            Self::TakeOffTheSyrup => Command::TakeOffTheSyrup,
+            Self::TakeOffTheButter => Command::TakeOffTheButter,
+            Self::EatAllOfThePancakes => Command::EatAllOfThePancakes,
         }
     }
 }
 
-/// An enum representing a pancakestack command.
-/// Labels and pancake adjectives are stored in [`String`](https://doc.rust-lang.org/std/string/struct.String.html)s .
-/// See [`BorrowedCommand`](./enum.BorrowedCommand.html) for a version that uses [`str`](https://doc.rust-lang.org/std/str/)s.
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum OwnedCommand {
-    PutThisPancakeOnTop(String),
-    EatThePancakeOnTop,
-    PutTheTopPancakesTogether,
-    GiveMeAPancake,
-    HowAboutAHotcake,
-    ShowMeAPancake,
-    TakeFromTheTopPancakes,
-    FlipThePancakesOnTop,
-    PutAnotherPancakeOnTop,
-    Label(String),
-    IfThePancakeIsntTastyGoOverTo(String),
-    IfThePancakeIsTastyGoOverTo(String),
-    PutSyrupOnThePancakes,
-    PutButterOnThePancakes,
-    TakeOffTheSyrup,
-    TakeOffTheButter,
-    EatAllOfThePancakes,
-}
-
-impl OwnedCommand {
-    /// Parses the given line as a pancake stack command.
-    /// The command will clone parts of the string (labels and adjectives).
-    ///
-    /// # Errors
-    /// Will return `Err` if the given line cannot be parsed as a command.
-    pub fn from_line(line: &'_ str) -> Result<Self, CommandParseError<'_>> {
-        BorrowedCommand::from_line(line).map(|e| e.to_owned())
-    }
-
-    /// Converts this command into an [`BorrowedCommand`](./enum.BorrowedCommand.html) referencing the strings in the original command.
-    #[must_use]
-    pub fn borrow(&'_ self) -> BorrowedCommand<'_> {
+impl Display for Command<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            OwnedCommand::PutThisPancakeOnTop(ref adj) => {
-                BorrowedCommand::PutThisPancakeOnTop(&adj)
+            Self::PutThisPancakeOnTop(adj) => write!(f, "Put this {} pancake on top!", adj),
+            Self::EatThePancakeOnTop => write!(f, "Eat the pancake on top!"),
+            Self::PutTheTopPancakesTogether => write!(f, "Put the top pancakes together!"),
+            Self::GiveMeAPancake => write!(f, "Give me a pancake!"),
+            Self::HowAboutAHotcake => write!(f, "How about a hotcake?"),
+            Self::ShowMeAPancake => write!(f, "Show me a pancake!"),
+            Self::TakeFromTheTopPancakes => write!(f, "Take from the top pancakes!"),
+            Self::FlipThePancakesOnTop => write!(f, "Flip the pancakes on top!"),
+            Self::PutAnotherPancakeOnTop => write!(f, "Put another pancake on top!"),
+            Self::Label(label) => write!(f, "[{}]", label),
+            Self::IfThePancakeIsntTastyGoOverTo(label) => {
+                write!(f, "If the pancake isn't tasty, go over to \"{}\"\\.", label)
             }
-            OwnedCommand::EatThePancakeOnTop => BorrowedCommand::EatThePancakeOnTop,
-            OwnedCommand::PutTheTopPancakesTogether => BorrowedCommand::PutTheTopPancakesTogether,
-            OwnedCommand::GiveMeAPancake => BorrowedCommand::GiveMeAPancake,
-            OwnedCommand::HowAboutAHotcake => BorrowedCommand::HowAboutAHotcake,
-            OwnedCommand::ShowMeAPancake => BorrowedCommand::ShowMeAPancake,
-            OwnedCommand::TakeFromTheTopPancakes => BorrowedCommand::TakeFromTheTopPancakes,
-            OwnedCommand::FlipThePancakesOnTop => BorrowedCommand::FlipThePancakesOnTop,
-            OwnedCommand::PutAnotherPancakeOnTop => BorrowedCommand::PutAnotherPancakeOnTop,
-            OwnedCommand::Label(label) => BorrowedCommand::Label(&label),
-            OwnedCommand::IfThePancakeIsntTastyGoOverTo(label) => {
-                BorrowedCommand::IfThePancakeIsntTastyGoOverTo(&label)
+            Self::IfThePancakeIsTastyGoOverTo(label) => {
+                write!(f, "If the pancake is tasty, go over to \"{}\"\\.", label)
             }
-            OwnedCommand::IfThePancakeIsTastyGoOverTo(label) => {
-                BorrowedCommand::IfThePancakeIsTastyGoOverTo(&label)
-            }
-            OwnedCommand::PutSyrupOnThePancakes => BorrowedCommand::PutSyrupOnThePancakes,
-            OwnedCommand::PutButterOnThePancakes => BorrowedCommand::PutButterOnThePancakes,
-            OwnedCommand::TakeOffTheSyrup => BorrowedCommand::TakeOffTheSyrup,
-            OwnedCommand::TakeOffTheButter => BorrowedCommand::TakeOffTheButter,
-            OwnedCommand::EatAllOfThePancakes => BorrowedCommand::EatAllOfThePancakes,
+            Self::PutSyrupOnThePancakes => write!(f, "Put syrup on the pancakes!"),
+            Self::PutButterOnThePancakes => write!(f, "Put butter on the pancakes!"),
+            Self::TakeOffTheSyrup => write!(f, "Take off the syrup!"),
+            Self::TakeOffTheButter => write!(f, "Take off the butter!"),
+            Self::EatAllOfThePancakes => write!(f, "Eat all of the pancakes!"),
         }
     }
 }
@@ -215,6 +235,7 @@ impl<'line> CommandParseError<'line> {
     pub fn new(line: &'line str) -> Self {
         CommandParseError { line }
     }
+
     #[must_use]
     pub fn line(&self) -> &str {
         self.line
@@ -225,8 +246,4 @@ impl Display for CommandParseError<'_> {
         write!(f, "Failed to parse command: {}", self.line())
     }
 }
-impl std::error::Error for CommandParseError<'_> {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-}
+impl std::error::Error for CommandParseError<'_> {}

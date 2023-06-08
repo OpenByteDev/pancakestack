@@ -1,4 +1,4 @@
-use crate::parse::{parse_program_str, BorrowedCommand, OwnedCommand};
+use crate::parse::{parse_program_str, Command};
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::io::{self, prelude::*, BufReader, Read, Write};
@@ -63,7 +63,7 @@ where
                 }
             }
 
-            let c = OwnedCommand::from_line(&program_line);
+            let c = Command::from_line(&program_line);
             if c.is_err() {
                 if !program_line.trim().is_empty() {
                     eprintln!("invalid command: \"{}\"", program_line);
@@ -75,20 +75,18 @@ where
             executed.last().unwrap()
         };
 
-        // println!("{:?} {:?}", stack, command);
-
         // TODO: Deduplicate this code
         match command {
-            OwnedCommand::PutThisPancakeOnTop(adjective) => {
+            Command::PutThisPancakeOnTop(adjective) => {
                 stack.push(adjective.graphemes(true).count() as u32);
             }
-            OwnedCommand::EatThePancakeOnTop => {
+            Command::EatThePancakeOnTop => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 stack.pop();
             }
-            OwnedCommand::PutTheTopPancakesTogether => {
+            Command::PutTheTopPancakesTogether => {
                 if stack.len() < 2 {
                     return Err(Error::OutOfPancakes);
                 }
@@ -97,7 +95,7 @@ where
                 let result = first.checked_add(second).ok_or(Error::PancakeOverflow)?;
                 stack.push(result);
             }
-            OwnedCommand::GiveMeAPancake => {
+            Command::GiveMeAPancake => {
                 input.read_line(&mut in_line)?;
                 let number_input = in_line
                     .parse()
@@ -105,13 +103,13 @@ where
                 stack.push(number_input);
                 in_line.clear();
             }
-            OwnedCommand::HowAboutAHotcake => {
+            Command::HowAboutAHotcake => {
                 let buf = input.fill_buf()?;
-                let number_input = *buf.get(0).unwrap_or(&0);
+                let number_input = *buf.first().unwrap_or(&0);
                 input.consume(1);
                 stack.push(u32::from(number_input));
             }
-            OwnedCommand::ShowMeAPancake => {
+            Command::ShowMeAPancake => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
@@ -119,7 +117,7 @@ where
                 let c = char::from_u32(*top).ok_or(Error::CanNotShowPancake(*top))?;
                 write!(output, "{}", c)?;
             }
-            OwnedCommand::TakeFromTheTopPancakes => {
+            Command::TakeFromTheTopPancakes => {
                 if stack.len() < 2 {
                     return Err(Error::OutOfPancakes);
                 }
@@ -128,7 +126,7 @@ where
                 let result = first.checked_sub(second).ok_or(Error::PancakeUnderflow)?;
                 stack.push(result);
             }
-            OwnedCommand::FlipThePancakesOnTop => {
+            Command::FlipThePancakesOnTop => {
                 if stack.len() < 2 {
                     return Err(Error::OutOfPancakes);
                 }
@@ -137,20 +135,20 @@ where
                 stack.push(first);
                 stack.push(second);
             }
-            OwnedCommand::PutAnotherPancakeOnTop => {
+            Command::PutAnotherPancakeOnTop => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 stack.push(*stack.last().unwrap());
             }
-            OwnedCommand::Label(label) => {
+            Command::Label(label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last().unwrap();
                 labels.insert(label.clone(), (*top - 1) as usize);
             }
-            OwnedCommand::IfThePancakeIsntTastyGoOverTo(target_label) => {
+            Command::IfThePancakeIsntTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
@@ -158,11 +156,11 @@ where
                 if top == 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or_else(|| Error::UndefinedLabel(target_label.clone()))?;
+                        .ok_or_else(|| Error::UndefinedLabel(target_label.to_string()))?;
                     current_statement = Some(*label_position);
                 }
             }
-            OwnedCommand::IfThePancakeIsTastyGoOverTo(target_label) => {
+            Command::IfThePancakeIsTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
@@ -170,35 +168,35 @@ where
                 if top != 0 {
                     let label_position = labels
                         .get(target_label)
-                        .ok_or_else(|| Error::UndefinedLabel(target_label.clone()))?;
+                        .ok_or_else(|| Error::UndefinedLabel(target_label.to_string()))?;
                     current_statement = Some(*label_position);
                 }
             }
-            OwnedCommand::PutSyrupOnThePancakes => {
+            Command::PutSyrupOnThePancakes => {
                 for value in &mut stack {
                     *value = value.checked_add(1).ok_or(Error::PancakeOverflow)?;
                 }
             }
-            OwnedCommand::PutButterOnThePancakes => {
+            Command::PutButterOnThePancakes => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last_mut().unwrap();
                 *top = top.checked_add(1).ok_or(Error::PancakeOverflow)?;
             }
-            OwnedCommand::TakeOffTheSyrup => {
+            Command::TakeOffTheSyrup => {
                 for value in &mut stack {
                     *value = value.checked_sub(1).ok_or(Error::PancakeUnderflow)?;
                 }
             }
-            OwnedCommand::TakeOffTheButter => {
+            Command::TakeOffTheButter => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last_mut().unwrap();
                 *top = top.checked_sub(1).ok_or(Error::PancakeUnderflow)?;
             }
-            OwnedCommand::EatAllOfThePancakes => {
+            Command::EatAllOfThePancakes => {
                 break;
             }
         }
@@ -256,11 +254,7 @@ where
 ///
 /// # Errors
 /// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
-pub fn run_program<I, O>(
-    program: &[BorrowedCommand<'_>],
-    input: I,
-    mut output: O,
-) -> Result<(), Error>
+pub fn run_program<I, O>(program: &[Command<'_>], input: I, mut output: O) -> Result<(), Error>
 where
     I: Read,
     O: Write,
@@ -275,20 +269,18 @@ where
     while let Some(command) = program.get(current_statement) {
         current_statement += 1;
 
-        // println!("{:?} {:?}", stack, command);
-
         // TODO: Deduplicate this code
         match command {
-            BorrowedCommand::PutThisPancakeOnTop(adjective) => {
+            Command::PutThisPancakeOnTop(adjective) => {
                 stack.push(adjective.graphemes(true).count() as u32);
             }
-            BorrowedCommand::EatThePancakeOnTop => {
+            Command::EatThePancakeOnTop => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 stack.pop();
             }
-            BorrowedCommand::PutTheTopPancakesTogether => {
+            Command::PutTheTopPancakesTogether => {
                 if stack.len() < 2 {
                     return Err(Error::OutOfPancakes);
                 }
@@ -297,7 +289,7 @@ where
                 let result = first.checked_add(second).ok_or(Error::PancakeOverflow)?;
                 stack.push(result);
             }
-            BorrowedCommand::GiveMeAPancake => {
+            Command::GiveMeAPancake => {
                 input.read_line(&mut in_line)?;
                 let number_input = in_line
                     .parse()
@@ -305,13 +297,13 @@ where
                 stack.push(number_input);
                 in_line.clear();
             }
-            BorrowedCommand::HowAboutAHotcake => {
+            Command::HowAboutAHotcake => {
                 let buf = input.fill_buf()?;
-                let number_input = *buf.get(0).unwrap_or(&0);
+                let number_input = *buf.first().unwrap_or(&0);
                 input.consume(1);
                 stack.push(u32::from(number_input));
             }
-            BorrowedCommand::ShowMeAPancake => {
+            Command::ShowMeAPancake => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
@@ -319,7 +311,7 @@ where
                 let c = char::from_u32(*top).ok_or(Error::CanNotShowPancake(*top))?;
                 write!(output, "{}", c)?;
             }
-            BorrowedCommand::TakeFromTheTopPancakes => {
+            Command::TakeFromTheTopPancakes => {
                 if stack.len() < 2 {
                     return Err(Error::OutOfPancakes);
                 }
@@ -328,7 +320,7 @@ where
                 let result = first.checked_sub(second).ok_or(Error::PancakeUnderflow)?;
                 stack.push(result);
             }
-            BorrowedCommand::FlipThePancakesOnTop => {
+            Command::FlipThePancakesOnTop => {
                 if stack.len() < 2 {
                     return Err(Error::OutOfPancakes);
                 }
@@ -337,20 +329,20 @@ where
                 stack.push(first);
                 stack.push(second);
             }
-            BorrowedCommand::PutAnotherPancakeOnTop => {
+            Command::PutAnotherPancakeOnTop => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 stack.push(*stack.last().unwrap());
             }
-            BorrowedCommand::Label(label) => {
+            Command::Label(label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last().unwrap();
-                labels.insert(*label, (*top - 1) as usize);
+                labels.insert(label, (*top - 1) as usize);
             }
-            BorrowedCommand::IfThePancakeIsntTastyGoOverTo(target_label) => {
+            Command::IfThePancakeIsntTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
@@ -362,7 +354,7 @@ where
                     current_statement = *label_position;
                 }
             }
-            BorrowedCommand::IfThePancakeIsTastyGoOverTo(target_label) => {
+            Command::IfThePancakeIsTastyGoOverTo(target_label) => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
@@ -374,31 +366,31 @@ where
                     current_statement = *label_position;
                 }
             }
-            BorrowedCommand::PutSyrupOnThePancakes => {
+            Command::PutSyrupOnThePancakes => {
                 for value in &mut stack {
                     *value = value.checked_add(1).ok_or(Error::PancakeOverflow)?;
                 }
             }
-            BorrowedCommand::PutButterOnThePancakes => {
+            Command::PutButterOnThePancakes => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last_mut().unwrap();
                 *top = top.checked_add(1).ok_or(Error::PancakeOverflow)?;
             }
-            BorrowedCommand::TakeOffTheSyrup => {
+            Command::TakeOffTheSyrup => {
                 for value in &mut stack {
                     *value = value.checked_sub(1).ok_or(Error::PancakeUnderflow)?;
                 }
             }
-            BorrowedCommand::TakeOffTheButter => {
+            Command::TakeOffTheButter => {
                 if stack.is_empty() {
                     return Err(Error::OutOfPancakes);
                 }
                 let top = stack.last_mut().unwrap();
                 *top = top.checked_sub(1).ok_or(Error::PancakeUnderflow)?;
             }
-            BorrowedCommand::EatAllOfThePancakes => {
+            Command::EatAllOfThePancakes => {
                 break;
             }
         }

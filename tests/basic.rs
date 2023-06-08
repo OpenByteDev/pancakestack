@@ -1,8 +1,9 @@
-use pancakestack::*;
 use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
 use std::str;
+
+use pancakestack::Command;
 
 #[test]
 fn simplest() -> Result<(), Box<dyn Error>> {
@@ -23,8 +24,8 @@ fn parse_program() -> Result<(), Box<dyn Error>> {
     assert_eq!(
         program_parsed,
         vec![
-            BorrowedCommand::PutThisPancakeOnTop("test"),
-            BorrowedCommand::ShowMeAPancake
+            Command::PutThisPancakeOnTop("test".into()),
+            Command::ShowMeAPancake
         ]
     );
     Ok(())
