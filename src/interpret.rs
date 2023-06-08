@@ -21,12 +21,7 @@ use unicode_segmentation::UnicodeSegmentation;
 ///
 /// # Errors
 /// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
-pub fn run_program_from_read<P, I, O>(program: P, input: I, mut output: O) -> Result<(), Error>
-where
-    P: Read,
-    I: Read,
-    O: Write,
-{
+pub fn run_program_from_read(program: impl Read, input: impl Read, mut output: impl Write) -> Result<(), Error> {
     let mut program = BufReader::new(program);
     let mut input = BufReader::new(input);
 
@@ -225,11 +220,7 @@ where
 ///
 /// # Errors
 /// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
-pub fn run_program_str<I, O>(program: &str, input: I, output: O) -> Result<(), Error>
-where
-    I: Read,
-    O: Write,
-{
+pub fn run_program_str(program: &str, input: impl Read, output: impl Write) -> Result<(), Error> {
     let parsed = parse_program_str(program);
     run_program(&parsed, input, output)
 }
@@ -254,11 +245,7 @@ where
 ///
 /// # Errors
 /// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
-pub fn run_program<I, O>(program: &[Command<'_>], input: I, mut output: O) -> Result<(), Error>
-where
-    I: Read,
-    O: Write,
-{
+pub fn run_program(program: &[Command<'_>], input: impl Read, mut output: impl Write) -> Result<(), Error> {
     let mut input = BufReader::new(input);
     let mut in_line = String::new();
 
