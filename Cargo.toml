@@ -16,8 +16,8 @@ keywords = ["pancake", "stack", "esoteric", "parser", "interpreter"]
 maintenance = { status = "passively-maintained" }
 
 [dependencies]
-"regex" = "1.8"
-"lazy-regex" = "2.5"
+"regex" = "1.9"
+"lazy-regex" = "3.0"
 "unicode-segmentation" = "1.10"
 
 [dev-dependencies]
