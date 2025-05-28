@@ -16,12 +16,12 @@ keywords = ["pancake", "stack", "esoteric", "parser", "interpreter"]
 maintenance = { status = "passively-maintained" }
 
 [dependencies]
-"regex" = "1.9"
-"lazy-regex" = "3.0"
-"unicode-segmentation" = "1.10"
+"regex" = "1.11"
+"lazy-regex" = "3.4"
+"unicode-segmentation" = "1.12"
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.6"
 
 [[bench]]
 name = "bench"
