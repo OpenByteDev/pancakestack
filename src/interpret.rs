@@ -2,7 +2,6 @@ use crate::parse::{parse_program_str, Command};
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::io::{self, prelude::*, BufReader, Read, Write};
-use std::{char, eprintln, str, u32, usize, write};
 use unicode_segmentation::UnicodeSegmentation;
 
 /// Parses and run the commands read from the given Read using the provided input and output.
@@ -65,7 +64,7 @@ pub fn run_program_from_read(
             let c = Command::from_line(&program_line);
             if c.is_err() {
                 if !program_line.trim().is_empty() {
-                    eprintln!("invalid command: \"{}\"", program_line);
+                    eprintln!("invalid command: \"{program_line}\"");
                 }
                 continue;
             }
@@ -114,7 +113,7 @@ pub fn run_program_from_read(
                 }
                 let top = stack.last().unwrap();
                 let c = char::from_u32(*top).ok_or(Error::CanNotShowPancake(*top))?;
-                write!(output, "{}", c)?;
+                write!(output, "{c}")?;
             }
             Command::TakeFromTheTopPancakes => {
                 if stack.len() < 2 {
@@ -304,7 +303,7 @@ pub fn run_program(
                 }
                 let top = stack.last().unwrap();
                 let c = char::from_u32(*top).ok_or(Error::CanNotShowPancake(*top))?;
-                write!(output, "{}", c)?;
+                write!(output, "{c}")?;
             }
             Command::TakeFromTheTopPancakes => {
                 if stack.len() < 2 {
@@ -415,11 +414,11 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::OutOfPancakes => write!(f, "Out of pancakes!"),
-            Error::InvalidPancake(s) => write!(f, "Invalid pancake: {}", s),
+            Error::InvalidPancake(s) => write!(f, "Invalid pancake: {s}"),
             Error::CanNotShowPancake(p) => {
-                write!(f, "Pancake can not be shown (invalid char): {}", p)
+                write!(f, "Pancake can not be shown (invalid char): {p}")
             }
-            Error::UndefinedLabel(l) => write!(f, "Use of undefined label \"{}\"", l),
+            Error::UndefinedLabel(l) => write!(f, "Use of undefined label \"{l}\""),
             Error::PancakeUnderflow => write!(f, "Pancake underflowed its domain."),
             Error::PancakeOverflow => write!(f, "Pancake overflowed its domain."),
             Error::Io(io) => io.fmt(f),

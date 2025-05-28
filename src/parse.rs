@@ -201,7 +201,7 @@ impl<'a> Command<'a> {
 impl Display for Command<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::PutThisPancakeOnTop(adj) => write!(f, "Put this {} pancake on top!", adj),
+            Self::PutThisPancakeOnTop(adj) => write!(f, "Put this {adj} pancake on top!"),
             Self::EatThePancakeOnTop => write!(f, "Eat the pancake on top!"),
             Self::PutTheTopPancakesTogether => write!(f, "Put the top pancakes together!"),
             Self::GiveMeAPancake => write!(f, "Give me a pancake!"),
@@ -210,12 +210,12 @@ impl Display for Command<'_> {
             Self::TakeFromTheTopPancakes => write!(f, "Take from the top pancakes!"),
             Self::FlipThePancakesOnTop => write!(f, "Flip the pancakes on top!"),
             Self::PutAnotherPancakeOnTop => write!(f, "Put another pancake on top!"),
-            Self::Label(label) => write!(f, "[{}]", label),
+            Self::Label(label) => write!(f, "[{label}]"),
             Self::IfThePancakeIsntTastyGoOverTo(label) => {
-                write!(f, "If the pancake isn't tasty, go over to \"{}\"\\.", label)
+                write!(f, "If the pancake isn't tasty, go over to \"{label}\"\\.")
             }
             Self::IfThePancakeIsTastyGoOverTo(label) => {
-                write!(f, "If the pancake is tasty, go over to \"{}\"\\.", label)
+                write!(f, "If the pancake is tasty, go over to \"{label}\"\\.")
             }
             Self::PutSyrupOnThePancakes => write!(f, "Put syrup on the pancakes!"),
             Self::PutButterOnThePancakes => write!(f, "Put butter on the pancakes!"),
