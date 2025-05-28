@@ -21,7 +21,11 @@ use unicode_segmentation::UnicodeSegmentation;
 ///
 /// # Errors
 /// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
-pub fn run_program_from_read(program: impl Read, input: impl Read, mut output: impl Write) -> Result<(), Error> {
+pub fn run_program_from_read(
+    program: impl Read,
+    input: impl Read,
+    mut output: impl Write,
+) -> Result<(), Error> {
     let mut program = BufReader::new(program);
     let mut input = BufReader::new(input);
 
@@ -245,7 +249,11 @@ pub fn run_program_str(program: &str, input: impl Read, output: impl Write) -> R
 ///
 /// # Errors
 /// Will return `Err` if the given program performs an illegal operation or an io error occurs. See [`Error`](./enum.Error.html).
-pub fn run_program(program: &[Command<'_>], input: impl Read, mut output: impl Write) -> Result<(), Error> {
+pub fn run_program(
+    program: &[Command<'_>],
+    input: impl Read,
+    mut output: impl Write,
+) -> Result<(), Error> {
     let mut input = BufReader::new(input);
     let mut in_line = String::new();
 
